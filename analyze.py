@@ -16,11 +16,91 @@ def add_minute_columns(df):
         df[f'{col}_min'] = df[col].apply(time_to_minutes)
     return df
 
-CSV_FILE = Path("Aachen.csv")
-    #    #  Day     Gregorian Date   Hijri Date   Fajr   Shuruq   Zuhr   Assr    Maghrib  Ishaa
-    # 0  1  Wed     2025-01-01       1446/7/1     06:37  08:33    12:45  14:26   16:46    18:36
-    # 1  2  Thu     2025-01-02       1446/7/2     06:37  08:33    12:45  14:27   16:47    18:36
-    # ...
+def calculate_prayer_durations(df):
+    """Calculate durations between prayer times and add them as new columns"""
+    # Duration from midnight to Fajr
+    df['duration_midnight_to_fajr'] = df['Fajr_min']
+    
+    # Duration between Fajr and Shuruq
+    df['duration_fajr_to_shuruq'] = df['Shuruq_min'] - df['Fajr_min']
+    
+    # Duration between Shuruq and Zuhr
+    df['duration_shuruq_to_zuhr'] = df['Zuhr_min'] - df['Shuruq_min']
+    
+    # Duration between Zuhr and Asr
+    df['duration_zuhr_to_asr'] = df['Assr_min'] - df['Zuhr_min']
+    
+    # Duration between Asr and Maghrib
+    df['duration_asr_to_maghrib'] = df['Maghrib_min'] - df['Assr_min']
+    
+    # Duration between Maghrib and Ishaa
+    df['duration_maghrib_to_ishaa'] = df['Ishaa_min'] - df['Maghrib_min']
+    
+    # Duration from Ishaa to midnight (next day)
+    df['duration_ishaa_to_midnight'] = (24 * 60) - df['Ishaa_min']
+    
+    # Verify the total is 24 hours (1440 minutes) for each day
+    total_minutes = (df['duration_midnight_to_fajr'] + 
+                    df['duration_fajr_to_shuruq'] + 
+                    df['duration_shuruq_to_zuhr'] + 
+                    df['duration_zuhr_to_asr'] + 
+                    df['duration_asr_to_maghrib'] + 
+                    df['duration_maghrib_to_ishaa'] + 
+                    df['duration_ishaa_to_midnight'])
+    
+    assert (total_minutes == 1440).all(), "Error: Total duration is not 24 hours for some days"
+    
+    return df
+
+def graph_prayer_durations(df):
+    """Create a stacked bar graph showing durations between prayer times"""
+    # Convert Gregorian Date to datetime and set as index
+    df["Gregorian Date"] = pd.to_datetime(df["Gregorian Date"])
+    
+    # Duration columns in order from first to last in the day
+    duration_columns = [
+        'duration_midnight_to_fajr',
+        'duration_fajr_to_shuruq',
+        'duration_shuruq_to_zuhr',
+        'duration_zuhr_to_asr',
+        'duration_asr_to_maghrib',
+        'duration_maghrib_to_ishaa',
+        'duration_ishaa_to_midnight'
+    ]
+    
+    # Labels for the legend
+    labels = [
+        'Midnight to Fajr',
+        'Fajr to Shuruq',
+        'Shuruq to Zuhr',
+        'Zuhr to Asr',
+        'Asr to Maghrib',
+        'Maghrib to Ishaa',
+        'Ishaa to Midnight'
+    ]
+    
+    # Create the figure and axis
+    plt.figure(figsize=(15, 8))
+    
+    # Create the stacked bar chart
+    bottom = None
+    for i, col in enumerate(duration_columns):
+        if bottom is None:
+            # First segment starts at 0
+            plt.bar(df["Gregorian Date"], df[col] / 60, label=labels[i])
+            bottom = df[col]
+        else:
+            plt.bar(df["Gregorian Date"], df[col] / 60, bottom=bottom / 60, label=labels[i])
+            bottom += df[col]
+    
+    # Format the plot
+    plt.title('Daily Prayer Time Durations')
+    plt.xlabel('Date')
+    plt.ylabel('Duration (hours)')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.grid(True, alpha=0.3)
+    plt.tight_layout()
+    plt.show()
 
 def graph_all_farj_times(df):
     # Convert Gregorian Date to datetime
@@ -46,6 +126,12 @@ def graph_all_farj_times(df):
     plt.tight_layout()
     plt.show()
 
+CSV_FILE = Path("Aachen.csv")
+    #    #  Day     Gregorian Date   Hijri Date   Fajr   Shuruq   Zuhr   Assr    Maghrib  Ishaa
+    # 0  1  Wed     2025-01-01       1446/7/1     06:37  08:33    12:45  14:26   16:46    18:36
+    # 1  2  Thu     2025-01-02       1446/7/2     06:37  08:33    12:45  14:27   16:47    18:36
+    # ...
+
 def main():
     # Load the data
     df = pd.read_csv(CSV_FILE)
@@ -53,11 +139,17 @@ def main():
     # Add minute columns for all prayer times
     df = add_minute_columns(df)
     
-    print("First few rows with minute columns:")
-    print(df[['Gregorian Date', 'Fajr', 'Fajr_min']].head())
+    # Calculate durations between prayer times
+    df = calculate_prayer_durations(df)
+    
+    print("First few rows with duration columns:")
+    print(df[['Gregorian Date', 'Fajr', 'Fajr_min', 'duration_midnight_to_fajr']].head())
     
     # Plot Fajr times
-    graph_all_farj_times(df)
+    # graph_all_farj_times(df)
+    
+    # Plot prayer time durations
+    graph_prayer_durations(df)
 
 if __name__ == "__main__":
     main()
