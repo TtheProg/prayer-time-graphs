@@ -81,13 +81,13 @@ def graph_prayer_durations(df):
     
     # Colors for each segment (from night to day and back to night)
     colors = [
-        '#0b0b2a',  # Very dark blue (Midnight to Fajr) - darker
+        '#1a1a4a',  # Dark blue (Midnight to Fajr) - slightly lighter and more saturated
         '#ff6b35',  # Sunrise orange (Fajr to Shuruq) - sunset color
         '#7cb342',  # Light green (Shuruq to Zuhr) - changed to green
         '#a5b4fc',  # Lighter blue-purple (Zuhr to Asr) - made lighter
         '#9575cd',  # More saturated purple (Asr to Maghrib)
         '#ff7e5f',  # Sunset orange-red (Maghrib to Ishaa) - sunset color
-        '#050520'   # Very dark blue (Ishaa to Midnight) - darker
+        '#0a0a30'   # Dark blue (Ishaa to Midnight) - slightly lighter and more saturated
     ]
     
     # Create the figure and axis with larger size
