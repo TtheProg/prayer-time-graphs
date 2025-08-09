@@ -79,26 +79,70 @@ def graph_prayer_durations(df):
         'Ishaa to Midnight'
     ]
     
-    # Create the figure and axis
+    # Colors for each segment (from night to day and back to night)
+    colors = [
+        '#0b0b2a',  # Very dark blue (Midnight to Fajr) - darker
+        '#ff6b35',  # Sunrise orange (Fajr to Shuruq) - sunset color
+        '#7cb342',  # Light green (Shuruq to Zuhr) - changed to green
+        '#a5b4fc',  # Lighter blue-purple (Zuhr to Asr) - made lighter
+        '#9575cd',  # More saturated purple (Asr to Maghrib)
+        '#ff7e5f',  # Sunset orange-red (Maghrib to Ishaa) - sunset color
+        '#050520'   # Very dark blue (Ishaa to Midnight) - darker
+    ]
+    
+    # Create the figure and axis with larger size
     plt.figure(figsize=(15, 8))
     
-    # Create the stacked bar chart
+    # Create the stacked bar chart with custom colors
     bottom = None
-    for i, col in enumerate(duration_columns):
+    for i, (col, color) in enumerate(zip(duration_columns, colors)):
         if bottom is None:
             # First segment starts at 0
-            plt.bar(df["Gregorian Date"], df[col] / 60, label=labels[i])
+            plt.bar(df["Gregorian Date"], df[col] / 60, 
+                   color=color, label=labels[i], width=1)
             bottom = df[col]
         else:
-            plt.bar(df["Gregorian Date"], df[col] / 60, bottom=bottom / 60, label=labels[i])
+            plt.bar(df["Gregorian Date"], df[col] / 60, 
+                   bottom=bottom / 60, color=color, 
+                   label=labels[i], width=1)
             bottom += df[col]
     
+    # Format y-axis to show hours:minutes
+    from matplotlib.ticker import FuncFormatter
+    def hours_minutes(x, pos):
+        hours = int(x)
+        minutes = int((x * 60) % 60)
+        return f"{hours:02d}:{minutes:02d}"
+    
+    # Get current axis and set formatter
+    ax = plt.gca()
+    ax.yaxis.set_major_formatter(FuncFormatter(hours_minutes))
+    
+    # Set y-axis limits and ticks
+    plt.ylim(0, 24)
+    y_ticks = range(0, 25, 2)  # Major ticks every 2 hours
+    plt.yticks(y_ticks, [f"{h:02d}:00" for h in y_ticks])
+    
+    # Add minor ticks for every hour
+    ax.set_yticks(range(0, 25, 1), minor=True)
+    
     # Format the plot
-    plt.title('Daily Prayer Time Durations')
+    plt.title('Daily Prayer Time Durations', pad=20)
     plt.xlabel('Date')
-    plt.ylabel('Duration (hours)')
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-    plt.grid(True, alpha=0.3)
+    plt.ylabel('Time of Day (HH:MM)')
+    
+    # Customize legend
+    legend = plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    
+    # Customize grid lines - darker and more visible
+    plt.grid(True, which='both', alpha=0.5, color='#666666', linestyle='-', linewidth=0.5)
+    
+    # Adjust layout to add some padding for better visibility
+    plt.subplots_adjust(bottom=0.12, top=0.9, right=0.8, left=0.1)
+    
+    # Add some spacing between bars
+    plt.margins(x=0.02)
+    
     plt.tight_layout()
     plt.show()
 
@@ -126,7 +170,7 @@ def graph_all_farj_times(df):
     plt.tight_layout()
     plt.show()
 
-CSV_FILE = Path("Aachen.csv")
+CSV_FILE = Path("Aachen_2025.csv")
     #    #  Day     Gregorian Date   Hijri Date   Fajr   Shuruq   Zuhr   Assr    Maghrib  Ishaa
     # 0  1  Wed     2025-01-01       1446/7/1     06:37  08:33    12:45  14:26   16:46    18:36
     # 1  2  Thu     2025-01-02       1446/7/2     06:37  08:33    12:45  14:27   16:47    18:36
