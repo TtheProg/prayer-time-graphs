@@ -3,6 +3,13 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from pathlib import Path
+import matplotlib.dates as mdates
+
+CSV_FILE = Path("Aachen_2025.csv")
+    #    #  Day     Gregorian Date   Hijri Date   Fajr   Shuruq   Zuhr   Assr    Maghrib  Ishaa
+    # 0  1  Wed     2025-01-01       1446/7/1     06:37  08:33    12:45  14:26   16:46    18:36
+    # 1  2  Thu     2025-01-02       1446/7/2     06:37  08:33    12:45  14:27   16:47    18:36
+    # ...
 
 def time_to_minutes(time_str):
     """Convert time string in format HH:MM to minutes since midnight"""
@@ -127,7 +134,8 @@ def graph_prayer_durations(df):
     ax.set_yticks(range(0, 25, 1), minor=True)
     
     # Format the plot
-    plt.title('Daily Prayer Time Durations', pad=20)
+    title = CSV_FILE.stem.replace('_', ' ') + ' - Daily Prayer Time Durations'
+    plt.title(title, pad=20)
     plt.xlabel('Date')
     plt.ylabel('Time of Day (HH:MM)')
     
@@ -137,11 +145,21 @@ def graph_prayer_durations(df):
     # Customize grid lines - darker and more visible
     plt.grid(True, which='both', alpha=0.5, color='#666666', linestyle='-', linewidth=0.5)
     
+    # Add vertical grid lines for each month
+    ax.xaxis.set_major_locator(mdates.MonthLocator())
+    ax.xaxis.set_major_formatter(mdates.DateFormatter('%b'))
+    ax.grid(True, which='major', axis='x', linestyle='--', alpha=0.7, color='#999999')
+    
     # Adjust layout to add some padding for better visibility
     plt.subplots_adjust(bottom=0.12, top=0.9, right=0.8, left=0.1)
     
     # Add some spacing between bars
     plt.margins(x=0.02)
+    
+    # Save the figure before showing it
+    output_filename = f"{CSV_FILE.stem}_year_graph.png"
+    plt.savefig(output_filename, dpi=300, bbox_inches='tight')
+    print(f"Graph saved as {output_filename}")
     
     plt.tight_layout()
     plt.show()
@@ -169,12 +187,6 @@ def graph_all_farj_times(df):
     plt.grid(True)
     plt.tight_layout()
     plt.show()
-
-CSV_FILE = Path("Aachen_2025.csv")
-    #    #  Day     Gregorian Date   Hijri Date   Fajr   Shuruq   Zuhr   Assr    Maghrib  Ishaa
-    # 0  1  Wed     2025-01-01       1446/7/1     06:37  08:33    12:45  14:26   16:46    18:36
-    # 1  2  Thu     2025-01-02       1446/7/2     06:37  08:33    12:45  14:27   16:47    18:36
-    # ...
 
 def main():
     # Load the data
